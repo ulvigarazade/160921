@@ -1,39 +1,64 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using _160921.DAL;
+using _160921.Models;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace _160921
 {
     public class Startup
     {
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit https://go.microsoft.com/fwlink/?LinkID=398940
+        private readonly IConfiguration _config;
+        public Startup(IConfiguration config)
+        {
+            _config = config;
+        }
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddMvc();
+
+            services.AddSession();
+
+            services.AddIdentity<User, IdentityRole>(IdentityOptions => {
+                IdentityOptions.Password.RequireDigit = true;
+                IdentityOptions.Password.RequireLowercase = true;
+                IdentityOptions.Password.RequireUppercase = true;
+                IdentityOptions.Password.RequiredLength = 7;
+                IdentityOptions.Password.RequireNonAlphanumeric = false;
+
+                IdentityOptions.User.RequireUniqueEmail = true;
+
+                IdentityOptions.Lockout.MaxFailedAccessAttempts = 5;
+                IdentityOptions.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(3);
+                IdentityOptions.Lockout.AllowedForNewUsers = true;
+            }).AddEntityFrameworkStores<AppDbContext>().AddDefaultTokenProviders();
+
+            services.AddDbContext<AppDbContext>(options =>
+            {
+                options.UseSqlServer(_config["ConnectionStrings:DefaultConnection"]);
+            });
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
-        {
-            if (env.IsDevelopment())
-            {
-                app.UseDeveloperExceptionPage();
-            }
+        { 
 
-            app.UseRouting();
+             app.UseStaticFiles();
 
-            app.UseEndpoints(endpoints =>
+             app.UseAuthentication();
+
+             app.UseSession();
+
+             app.UseMvc(routes =>
             {
-                endpoints.MapGet("/", async context =>
-                {
-                    await context.Response.WriteAsync("Hello World!");
-                });
+                routes.MapRoute("default", "{controller=Home}/{action=Index}/{ID?}");
             });
         }
     }
