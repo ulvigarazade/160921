@@ -1,11 +1,32 @@
-﻿using System;
+﻿using _160921.DAL;
+using _160921.ViewModels;
+using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace _160921.ViewComponents
+namespace BackEndProject.ViewComponents
 {
-    public class FooterViewComponent
+    public class FooterViewComponent : ViewComponent
     {
+        private readonly AppDbContext _db;
+
+        public FooterViewComponent(AppDbContext db)
+        {
+            _db = db;
+        }
+
+        public async Task<IViewComponentResult> InvokeAsync()
+        {
+
+            HeaderFooterVM footerVM = new HeaderFooterVM
+            {
+                Data = _db.Data.FirstOrDefault(),
+                CenterPhoneNumbers = _db.CenterPhoneNumbers
+            };
+
+            return View(await Task.FromResult(footerVM));
+        }
     }
 }
